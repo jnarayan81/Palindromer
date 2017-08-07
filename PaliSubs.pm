@@ -254,8 +254,15 @@ sub moveFiles {
 }
 
 
-sub process_contig
-  {
+sub process_contig {
+my($contig, $sequence) = @_;
+my $sequencelength = length $sequence;
+my $GCcount = $sequence =~ tr/GC//;
+my $GCcontent = ($GCcount / $sequencelength) * 100;
+return $GCcontent;
+}
+
+sub process_contig2 {
   my($contig, $sequence) = @_;
   my($len, $ACGTbases, $ATbases, $GCbases, $nonACGTbases);
 
