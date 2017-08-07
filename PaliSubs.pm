@@ -96,17 +96,18 @@ print "Looking for palindrome in $id :";
 		push @allpalGC, $palGC;
 		#Plot DOTPLOT with R
 		if ($plot eq "yes") { dotplotR ($tmp_fh, $identity, $id, $outfile);}
+					
 		#TRF SETTINGS and RUN
-		system ("./trf/trf409.linux64 $seqfile-sequence_$id.palfs 2 5 7 80 10 50 2000 -l 6 -d");
+		#system ("./trf/trf409.linux64 $seqfile-sequence_$id.palfs 2 5 7 80 10 50 2000 -l 6 -d");
 		#File extension append the parameters at end ... Need to update it later
 		#system ("perl trfparser_v1.pl $seqfile-sequence_$id.palfs.2.5.7.80.10.50.2000.dat , 1");
 		#process_di_tri($id, $seq, 1);
-		reformatTRF("$seqfile-sequence_$id.palfs.2.5.7.80.10.50.2000.dat" , 1, "$id");
+		#reformatTRF("$seqfile-sequence_$id.palfs.2.5.7.80.10.50.2000.dat" , 1, "$id");
 		my @allfs_files = glob ('*.palfs');
 		moveFiles(\@allfs_files,"$outfile");
 		my @allfp_files = glob ('*.final.parse');
 		moveFiles(\@allfp_files,"$outfile");
-		remove( '*.html', '*.parse', '*.tmp','*.dat' );
+		#remove( '*.html', '*.parse', '*.tmp','*.dat' );
 	}
 
 #last; # Terminate and check the first seq result
@@ -118,9 +119,9 @@ system("find $outfile -size 0 -delete"); # Delete size zero file
 
 
 print "\nConcatinating ----------\n";
-system ("perl -please $outfile/*.tmpal > Palindrome.palfc");
+#system ("perl -please $outfile/*.tmpal > Palindrome.palfc");
 #system ("cd $outfile; for a in *.tmpal ; do cat $a >> Palindrome.palfc ; done; cd ..");
-
+system ("cd $outfile ; find . -exec cat {} \; > newFile ; cd .. ");
 print "done concat \n";
 
 #my $outfile = shift;
