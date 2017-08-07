@@ -166,6 +166,15 @@ print "$fileD, $idt, $id, $outfile\n";
 
 my $myDOTPLOT="lastz $fileD $fileD --chain --output=$outfile/dotplotRES/$id.dotplot --format=rdotplot --progress --ambiguous=iupac --identity=$idt --strand=minus";
 system ("$myDOTPLOT");
+
+my $error = system qw($myDOTPLOT);
+if ($error) {
+    die qq(\nAw... LastZ .. It failed\n Check your LastZ path);
+}
+else {
+    print qq(\nHooray! It worked!\n\n);
+}
+
 system ("Rscript Rscripts/LASTZdotplot.R --title $id-dotplot -s 1000 -r 100 -o $outfile/dotplotRES/seeDotplot-$id $outfile/dotplotRES/$id.dotplot");
 
 }
