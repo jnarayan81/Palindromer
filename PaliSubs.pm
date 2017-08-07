@@ -118,8 +118,10 @@ system("find $outfile -size 0 -delete"); # Delete size zero file
 
 
 print "\nConcatinating ----------\n";
-#system ("perl -please $outfile/*.tmpal > Palindrome.palfc");
-system ("cd $outfile; for a in *.tmpal ; do cat $a >> Palindrome.palfc ; done; cd ..");
+system ("perl -please $outfile/*.tmpal > Palindrome.palfc");
+#system ("cd $outfile; for a in *.tmpal ; do cat $a >> Palindrome.palfc ; done; cd ..");
+
+print "done concat \n";
 
 #my $outfile = shift;
 #open OUT,">".$outfile or die "Could not open $outfile:$!\n";
@@ -136,17 +138,25 @@ close FASTA;
 
 #Final STAT
 printLines(50,'*');
+if ($seqCnt) { 
 my $stat=$paliCnt*100/$seqCnt;
 my $sum = [map {$sum +=$_} @allpalGC]->[$#allpalGC];
 my $avgPalGC=$sum/scalar(@allpalGC);
 my $sumAll = [map {$sumAll +=$_} @allGC]->[$#allGC];
 my $avgAllGC=$sumAll/scalar(@allGC);
 
+
+
 print "FINAL STATS: 
 Total sequence checked: $seqCnt 
 Total palindrome sequence count: $paliCnt 
 Percent of sequences are in palindrome: $stat%
 Average GC of palindromic sequence: $avgPalGC% vs $avgAllGC% all\n";
+}
+else {
+
+print "No palindrome\n";
+}
 
 printLines(50,'*');
 }
