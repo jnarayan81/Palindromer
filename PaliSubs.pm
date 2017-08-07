@@ -62,7 +62,7 @@ local $/ = "\n>";  # read by FASTA record
 my $seqCnt=0;
 my $paliCnt=0;
 my @allGC; my @allpalGC;
-open FASTA, $seqfile;
+open FASTA, $seqfile or die "cant open the $seqfile file: $!";
 while (<FASTA>) {
     chomp;
     my $seq = $_;
@@ -96,7 +96,7 @@ print "Looking for palindrome in $id :";
 		push @allpalGC, $palGC;
 		#Plot DOTPLOT with R
 		if ($plot eq "yes") { dotplotR ($tmp_fh, $identity, $id, $outfile);}
-					
+		
 		#TRF SETTINGS and RUN
 		#system ("./trf/trf409.linux64 $seqfile-sequence_$id.palfs 2 5 7 80 10 50 2000 -l 6 -d");
 		#File extension append the parameters at end ... Need to update it later
@@ -120,9 +120,7 @@ system("find $outfile -size 0 -delete"); # Delete size zero file
 
 print "\nConcatinating ----------\n";
 #system ("perl -please $outfile/*.tmpal > Palindrome.palfc");
-#system ("cd $outfile; for a in *.tmpal ; do cat $a >> Palindrome.palfc ; done; cd ..");
-system ("cd $outfile ; find . -exec cat {} \; > newFile ; cd .. ");
-print "done concat \n";
+system ("cd $outfile; find . -name '*.tmpal' -exec cat {} \+ > Palindrome.palfc ; cd .."); # note in some cases \; is needed -- tested on ubuntu
 
 #my $outfile = shift;
 #open OUT,">".$outfile or die "Could not open $outfile:$!\n";
@@ -133,20 +131,18 @@ print "done concat \n";
 my @allfc_files = glob ('*.palfc');
 moveFiles(\@allfc_files,"$outfile");
 
-print  "\nDeleting .tmpal files\n";
+#print  "\nDeleting .tmpal files\n";
 #remove("$outfile/*.tmpal"); #delete all
 close FASTA;
 
 #Final STAT
 printLines(50,'*');
-if ($seqCnt) { 
+if ($seqCnt) {
 my $stat=$paliCnt*100/$seqCnt;
 my $sum = [map {$sum +=$_} @allpalGC]->[$#allpalGC];
 my $avgPalGC=$sum/scalar(@allpalGC);
 my $sumAll = [map {$sumAll +=$_} @allGC]->[$#allGC];
 my $avgAllGC=$sumAll/scalar(@allGC);
-
-
 
 print "FINAL STATS: 
 Total sequence checked: $seqCnt 
@@ -154,11 +150,7 @@ Total palindrome sequence count: $paliCnt
 Percent of sequences are in palindrome: $stat%
 Average GC of palindromic sequence: $avgPalGC% vs $avgAllGC% all\n";
 }
-else {
-
-print "No palindrome\n";
-}
-
+else {print "No Palindrome";}
 printLines(50,'*');
 }
 
