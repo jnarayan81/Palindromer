@@ -30,6 +30,7 @@ my (
 	$outfile, 
 	$identity,
 	$plot,
+	$strand,
 	$logfile,
 );
 
@@ -44,6 +45,7 @@ GetOptions(
     	'outfile|o=s' 		=> \$outfile,           ## Outfile
 	'identity|i=i' 		=> \$identity, 		## identity percentage
 	'plot|p=s' 		=> \$plot, 		## plot dotplot with R "yes or no"
+	'strand|s=s' 		=> \$strand, 		## plot dotplot with R "minus" or "plus" or "both"
     	'help|?|h!'     	=> sub { PaliSubs::printUsage($VERSION) },
    	'who|w!'     		=> sub { PaliSubs::Who($VERSION) },
 	'verbose' 		=> \$verbose,
@@ -51,7 +53,7 @@ GetOptions(
 	
 ) or die PaliSubs::ManualHelp();
 
-if ((!$infile) or (!$outfile) or (!$identity)) { 
+if ((!$infile) or (!$outfile) or (!$identity) or (!$strand)) { 
 print "ERROR: You might forgot to provide right flags\n";
 PaliSubs::printUsage(); exit; }
 
@@ -60,7 +62,7 @@ flock(DATA,LOCK_EX|LOCK_NB)
   or  die "This script ($0) is already running.\n Wait the first instances to finish and try again later\n Sorry for inconvenience\n";
 
 #Set up the path of all required tools - stored in the same folder
-$ENV{'PATH'} = "/bin:/usr/bin:/usr/bin/env:$ENV{PWD}/lastz-distrib-1.03.73/src:$ENV{PWD}/trf";
+#$ENV{'PATH'} = "/bin:/usr/bin:/usr/bin/env:$ENV{PWD}/lastz-distrib-1.03.73/src:$ENV{PWD}/trf";
 
 if ($plot) { 
 	print "\nWARNINGS:You have selected doplot option, which might take more computation time\n\n";
@@ -81,7 +83,7 @@ if ( -e $outfile ) {
 
 #To check the palindrome
 print "Cheking palindrome in $infile file\n\n";
-PaliSubs::palindrome($infile, $identity, $plot, $outfile);
+PaliSubs::palindrome($infile, $identity, $plot, $outfile, $strand);
 
 print "\nPlease check your $outfile folder/files for result :)\n\n";
 

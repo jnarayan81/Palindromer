@@ -47,7 +47,7 @@ our @EXPORT_OK = qw(yesORno deldir);
 
 
 sub palindrome {
-my($seqfile, $identity, $plot, $outfile) = @_;
+my($seqfile, $identity, $plot, $outfile, $strand) = @_;
 use File::Temp qw(tempfile);
 use File::Copy;
 use File::Remove 'remove';
@@ -84,8 +84,12 @@ print "Looking for palindrome in $id :";
 	#if ( grep( /^$id$/, @myids ) ) {
 
 	#LASTZ SETTINGS and RUN
-	my $myLASTZ="lastz $tmp_fh $tmp_fh --chain --output=$outfile/$seqfile-$id.tmpal --format=general- --progress --ambiguous=iupac --identity=$identity --strand=minus";
+	my $myLASTZ="lastz $tmp_fh $tmp_fh --chain --output=$outfile/$seqfile-$id.tmpal --format=general- --progress --ambiguous=iupac --identity=$identity --strand=$strand";
         system ("$myLASTZ");
+
+	my $error = system qw($myLASTZ);
+		if ($error) { die qq(\nAw... LastZ .. It failed\n Check your LastZ path);}
+		else { print qq(\nHooray! It worked!\n\n);}
 	#}
 	#Check only of there is some reported palindrome
 	if (-s "$outfile/$seqfile-$id.tmpal") {
@@ -95,7 +99,7 @@ print "Looking for palindrome in $id :";
 		my $palGC=PaliSubs::process_contig($id, $seq);
 		push @allpalGC, $palGC;
 		#Plot DOTPLOT with R
-		if ($plot eq "yes") { dotplotR ($tmp_fh, $identity, $id, $outfile);}
+		if ($plot eq "yes") { dotplotR ($tmp_fh, $identity, $id, $outfile, $strand);}
 		
 		#TRF SETTINGS and RUN
 		#system ("./trf/trf409.linux64 $seqfile-sequence_$id.palfs 2 5 7 80 10 50 2000 -l 6 -d");
@@ -161,10 +165,10 @@ print "\n$seplines";
 }
 
 sub dotplotR {
-my ($fileD, $idt, $id, $outfile) = @_;
+my ($fileD, $idt, $id, $outfile, $strand) = @_;
 print "$fileD, $idt, $id, $outfile\n";
 
-my $myDOTPLOT="lastz $fileD $fileD --chain --output=$outfile/dotplotRES/$id.dotplot --format=rdotplot --progress --ambiguous=iupac --identity=$idt --strand=minus";
+my $myDOTPLOT="lastz $fileD $fileD --chain --output=$outfile/dotplotRES/$id.dotplot --format=rdotplot --progress --ambiguous=iupac --identity=$idt --strand=$strand";
 system ("$myDOTPLOT");
 
 my $error = system qw($myDOTPLOT);
@@ -517,13 +521,15 @@ Usage:
 perl Palindromer.pl -f sampleSeq.fa -o TESTOUT2 -i 90
 
 Mandatory parameters: 
-  -f <infile> 	Provide the contigs/scaffods file.
+  -f <infile> 			Provide the contigs/scaffods file.
 
-  -o <outfolder> 	Provide the outfolder. 
+  -o <outfolder> 		Provide the outfolder. 
 
-  -i <num> 		Identify percentage for lastz.
+  -i <num> 			Identify percentage for lastz.
 
-  -p <yes or no>	Plot the R dotplot
+  -p <yes or no>		Plot the R dotplot
+
+  -s <minus or plus or both> 	Plot dotplot with R "minus" or "plus" or "both"
 
 End_Print_Usage
 
