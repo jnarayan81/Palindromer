@@ -113,13 +113,15 @@ print "Looking for palindrome in $id :";
 		moveFiles(\@allfp_files,"$outfile");
 		#remove( '*.html', '*.parse', '*.tmp','*.dat' );
 	}
+	else { unlink "$outfile/$seqfile-$id.tmpal" or die "Cant delete this file $outfile/$seqfile-$id.tmpal $!\n";
+}
 
 #last; # Terminate and check the first seq result
 }
 
 #contactinate all palindromic hits files
-print "Deleting size zero files\n";
-system("find $outfile -size 0 -delete"); # Delete size zero file
+#print "Deleting size zero files\n";
+#system("find $outfile -size 0 -delete"); # Delete size zero file
 
 
 print "\nConcatinating ----------\n";
