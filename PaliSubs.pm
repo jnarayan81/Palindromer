@@ -67,6 +67,7 @@ while (<FASTA>) {
     chomp;
     my $seq = $_;
     my ($id) = $seq =~ /^>*(\S+)/;  # parse ID as first word in FASTA header
+    if ((index($id, "/") != -1) or (index($id, "|")) != -1) { print "Your fasta sequence $id contains / or |\n\n"; exit; }
         $seq =~ s/^>*.+\n//;  # remove FASTA header
         $seq =~ s/\n//g;  # remove endlines
 
@@ -113,8 +114,7 @@ print "Looking for palindrome in $id :";
 		moveFiles(\@allfp_files,"$outfile");
 		#remove( '*.html', '*.parse', '*.tmp','*.dat' );
 	}
-	else { unlink "$outfile/$seqfile-$id.tmpal" or die "Cant delete this file $outfile/$seqfile-$id.tmpal $!\n";
-}
+	else { unlink "$outfile/$seqfile-$id.tmpal" or die "Cant delete this file $outfile/$seqfile-$id.tmpal $!\n";}
 
 #last; # Terminate and check the first seq result
 }
@@ -123,11 +123,11 @@ print "Looking for palindrome in $id :";
 #print "Deleting size zero files\n";
 #system("find $outfile -size 0 -delete"); # Delete size zero file
 
-
 print "\nConcatinating ----------\n";
 #system ("perl -please $outfile/*.tmpal > Palindrome.palfc");
 system ("cd $outfile; find . -name '*.tmpal' -exec cat {} \+ > Palindrome.palfc ; cd .."); # note in some cases \; is needed -- tested on ubuntu
 
+if (-z "$outfile/Palindrome.palfc") { print "!!! NO PALINDROME identified !!!\n"; exit();} 
 #my $outfile = shift;
 #open OUT,">".$outfile or die "Could not open $outfile:$!\n";
 #print OUT $_ while <>;
