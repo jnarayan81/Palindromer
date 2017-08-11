@@ -30,6 +30,8 @@ my (
 	$outfile, 
 	$identity,
 	$plot,
+	$clean,
+	$repeats,
 	$strand,
 	$logfile,
 );
@@ -45,7 +47,9 @@ GetOptions(
     	'outfile|o=s' 		=> \$outfile,           ## Outfile
 	'identity|i=i' 		=> \$identity, 		## identity percentage
 	'plot|p=s' 		=> \$plot, 		## plot dotplot with R "yes or no"
+	'clean|c=s' 		=> \$clean, 		## clean result yes or no
 	'strand|s=s' 		=> \$strand, 		## plot dotplot with R "minus" or "plus" or "both"
+	'repeats|r=s' 		=> \$repeats, 		## yes or no
     	'help|?|h!'     	=> sub { PaliSubs::printUsage($VERSION) },
    	'who|w!'     		=> sub { PaliSubs::Who($VERSION) },
 	'verbose' 		=> \$verbose,
@@ -53,7 +57,7 @@ GetOptions(
 	
 ) or die PaliSubs::ManualHelp();
 
-if ((!$infile) or (!$outfile) or (!$identity) or (!$strand)) { 
+if ((!$infile) or (!$outfile) or (!$identity) or (!$strand) or (!$clean) or (!$repeats)) { 
 print "ERROR: You might forgot to provide right flags\n";
 PaliSubs::printUsage(); exit; }
 
@@ -83,7 +87,7 @@ if ( -e $outfile ) {
 
 #To check the palindrome
 print "Cheking palindrome in $infile file\n\n";
-PaliSubs::palindrome($infile, $identity, $plot, $outfile, $strand);
+PaliSubs::palindrome($infile, $identity, $plot, $outfile, $strand,$clean, $repeats);
 
 print "\nPlease check your $outfile folder/files for result :)\n\n";
 

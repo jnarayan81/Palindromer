@@ -47,7 +47,7 @@ our @EXPORT_OK = qw(yesORno deldir);
 
 
 sub palindrome {
-my($seqfile, $identity, $plot, $outfile, $strand) = @_;
+my($seqfile, $identity, $plot, $outfile, $strand, $clean, $repeats) = @_;
 use File::Temp qw(tempfile);
 use File::Copy;
 use File::Remove 'remove';
@@ -56,6 +56,8 @@ mkdir("$ENV{PWD}/$outfile") or die $!;
 if ($plot eq "yes") { mkdir("$ENV{PWD}/$outfile/dotplotRES") or die $!;}
 #mkdir('tmpRES') or die $!;
 # It read one fasta sequence from multi fasta file and lastz it. Store the data in referece sequence fasta name/ID.
+my $filename = 'Palindrome.palfc';
+open(my $fh, '>>', $filename) or die "Could not open file '$filename' $!";
 
 local $/ = "\n>";  # read by FASTA record
 #my @myids=('scaffold1763size26795A','scaffold1763size26795','scaffold3384size10299','scaffold983size82572','scaffold2310size31877A','scaffold2310size31877','scaffold2830size13842','scaffold2691size24698','scaffold1182size56708','scaffold2502size16882','scaffold3486size20253','scaffold2330size18741','scaffold1662size56991','scaffold698size60806A','scaffold698size60806','scaffold1607size29713','scaffold1387size51584','scaffold1277size37928','scaffold1202size40069','scaffold1150size80769','scaffold1064size52433','scaffold158size147409A','scaffold158size147409','scaffold123size173649','scaffold50size285965');
@@ -69,8 +71,8 @@ while (<FASTA>) {
     my ($id) = $seq =~ /^>*(\S+)/;  # parse ID as first word in FASTA header
     if ((index($id, "/") != -1) or (index($id, "|")) != -1) { print "Your fasta sequence $id contains / or |\n\n"; exit; }
         $seq =~ s/^>*.+\n//;  # remove FASTA header
-        $seq =~ s/\n//g;  # remove endlines
-
+        $seq =~ s/\n//g;  # remove endlines 
+	
 	$seqCnt++;
 	my $GC=PaliSubs::process_contig($id, $seq);
 	push @allGC, $GC;
@@ -90,34 +92,49 @@ print "Looking for palindrome in $id :";
 
 	my $error = system qw($myLASTZ);
 		if ($error) { die qq(\nAw... LastZ .. It failed\n Check your LastZ path);}
-		else { print qq(\nHooray! It worked!\n\n);}
+		else { print qq(\nHooray! LastZ worked!\n\n);}
+	
+	open(FILE, "$outfile/$seqfile-$id.tmpal") or die "Can't read file $outfile/$seqfile-$id.tmpal [$!]\n";  
+	$document = <FILE>; 
+	close (FILE); 	
+	
 	#}
 	#Check only of there is some reported palindrome
 	if (-s "$outfile/$seqfile-$id.tmpal") {
    		#system ("dotter $tmp_fh $tmp_fh");
-		copy("$tmp_fh", "$seqfile-sequence_$id.palfs");
 		$paliCnt++;
 		my $palGC=PaliSubs::process_contig($id, $seq);
 		push @allpalGC, $palGC;
 		#Plot DOTPLOT with R
-		if ($plot eq "yes") { dotplotR ($tmp_fh, $identity, $id, $outfile, $strand);}
+		if ($plot eq "yes") { dotplotR ($tmp_fh, $identity, $id, $outfile, $strand, $clean);}
 		
+		if ($repeats eq 'yes') {
 		#TRF SETTINGS and RUN
-		#system ("./trf/trf409.linux64 $seqfile-sequence_$id.palfs 2 5 7 80 10 50 2000 -l 6 -d");
+		copy("$tmp_fh", "$seqfile-sequence_$id.palfs");
+		system ("./trf/trf409.linux64 $seqfile-sequence_$id.palfs 2 5 7 80 10 50 2000 -l 6 -d");
 		#File extension append the parameters at end ... Need to update it later
-		#system ("perl trfparser_v1.pl $seqfile-sequence_$id.palfs.2.5.7.80.10.50.2000.dat , 1");
-		#process_di_tri($id, $seq, 1);
-		#reformatTRF("$seqfile-sequence_$id.palfs.2.5.7.80.10.50.2000.dat" , 1, "$id");
+		system ("perl ./trf/trfparser_v1.pl $seqfile-sequence_$id.palfs.2.5.7.80.10.50.2000.dat 1");
+		process_di_tri($id, $seq, 1);
+		reformatTRF("$seqfile-sequence_$id.palfs.2.5.7.80.10.50.2000.dat" , 1, "$id");
 		my @allfs_files = glob ('*.palfs');
 		moveFiles(\@allfs_files,"$outfile");
 		my @allfp_files = glob ('*.final.parse');
 		moveFiles(\@allfp_files,"$outfile");
-		#remove( '*.html', '*.parse', '*.tmp','*.dat' );
+		remove( '*.html', '*.parse', '*.tmp','*.dat' );
+		}
+
+	#Store it in file
+	print $fh "$document\n";
+	#Delete the file
+	if ($clean eq "yes") { unlink "$outfile/$seqfile-$id.tmpal" or die "Cant delete this file $outfile/$seqfile-$id.tmpal $!\n";}
+
 	}
 	else { unlink "$outfile/$seqfile-$id.tmpal" or die "Cant delete this file $outfile/$seqfile-$id.tmpal $!\n";}
 
 #last; # Terminate and check the first seq result
 }
+
+close $fh;
 
 #contactinate all palindromic hits files
 #print "Deleting size zero files\n";
@@ -125,7 +142,7 @@ print "Looking for palindrome in $id :";
 
 print "\nConcatinating ----------\n";
 #system ("perl -please $outfile/*.tmpal > Palindrome.palfc");
-system ("cd $outfile; find . -name '*.tmpal' -exec cat {} \+ > Palindrome.palfc ; cd .."); # note in some cases \; is needed -- tested on ubuntu
+#system ("cd $outfile; find . -name '*.tmpal' -exec cat {} \+ > Palindrome.palfc ; cd .."); # note in some cases \; is needed -- tested on ubuntu
 
 if (-z "$outfile/Palindrome.palfc") { print "!!! NO PALINDROME identified !!!\n"; exit();} 
 #my $outfile = shift;
@@ -143,6 +160,7 @@ close FASTA;
 
 #Final STAT
 printLines(50,'*');
+
 if ($seqCnt) {
 my $stat=$paliCnt*100/$seqCnt;
 my $sum = [map {$sum +=$_} @allpalGC]->[$#allpalGC];
@@ -167,7 +185,7 @@ print "\n$seplines";
 }
 
 sub dotplotR {
-my ($fileD, $idt, $id, $outfile, $strand) = @_;
+my ($fileD, $idt, $id, $outfile, $strand, $clean) = @_;
 print "$fileD, $idt, $id, $outfile\n";
 
 my $myDOTPLOT="lastz $fileD $fileD --chain --output=$outfile/dotplotRES/$id.dotplot --format=rdotplot --progress --ambiguous=iupac --identity=$idt --strand=$strand";
@@ -178,11 +196,13 @@ if ($error) {
     die qq(\nAw... LastZ .. It failed\n Check your LastZ path);
 }
 else {
-    print qq(\nHooray! It worked!\n\n);
+    print qq(\nHooray! LastZ worked!\n\n);
 }
 
 system ("Rscript Rscripts/LASTZdotplot.R --title $id-dotplot -s 1000 -r 100 -o $outfile/dotplotRES/seeDotplot-$id $outfile/dotplotRES/$id.dotplot");
 
+#delete the file
+if ($clean eq "yes") {  unlink "$outfile/dotplotRES/$id.dotplot" or die "Cant delete this file $outfile/dotplotRES/$id.dotplot $!\n"; }
 }
 
 #subroutine to check tri di bases
@@ -532,6 +552,10 @@ Mandatory parameters:
   -p <yes or no>		Plot the R dotplot
 
   -s <minus or plus or both> 	Plot dotplot with R "minus" or "plus" or "both"
+
+  -c <minus or plus or both> 	clean files "yes" or "no"
+
+  -r <repeats> 	find repeats "yes" or "no"
 
 End_Print_Usage
 
