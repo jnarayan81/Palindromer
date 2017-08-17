@@ -10,6 +10,7 @@ use File::Remove 'remove';
 use File::Path qw(make_path remove_tree);
 use Fcntl qw( LOCK_EX LOCK_NB );
 use PaliSubs;
+use Cwd 'abs_path';
 
 print <<'WELCOME';   
 		 ___
@@ -33,6 +34,7 @@ my (
 	$clean,
 	$repeats,
 	$strand,
+	$brutal,
 	$logfile,
 );
 
@@ -40,6 +42,7 @@ my (
 my $VERSION=0.1;
 my $verbose=0; 		# Verbose set to 0;
 my %options = ();
+$brutal='no';
 
 GetOptions(
 	\%options,
@@ -50,12 +53,13 @@ GetOptions(
 	'clean|c=s' 		=> \$clean, 		## clean result yes or no
 	'strand|s=s' 		=> \$strand, 		## plot dotplot with R "minus" or "plus" or "both"
 	'repeats|r=s' 		=> \$repeats, 		## yes or no
+	'brutal|b=s'		=> \$brutal,
     	'help|?|h!'     	=> sub { PaliSubs::printUsage($VERSION) },
    	'who|w!'     		=> sub { PaliSubs::Who($VERSION) },
 	'verbose' 		=> \$verbose,
     	'logfile=s' 		=> \$logfile,		## logfile
 	
-) or die PaliSubs::ManualHelp();
+) or die PaliSubs::printUsage();
 
 if ((!$infile) or (!$outfile) or (!$identity) or (!$strand) or (!$clean) or (!$repeats)) { 
 print "ERROR: You might forgot to provide right flags\n";
@@ -77,19 +81,17 @@ if ($identity !~ /^[0-9,.E]+$/ ) { print "Enter numeric value in $identity -i <n
 
 #Remove tmpRES folder
 #remove_tree( "tmpRES");
-remove_tree( "$outfile"); # Remove older for palindrome
+#remove_tree( "$outfile"); # Remove older for palindrome
 #also delete
 
-if ( -e $outfile ) {
-	print "The $outfile already exists, deleting now\n";
-        unlink($outfile) or die "$outfile: $!"
-    }
+my $path = abs_path("$outfile");
+print "Outfile in $path\n";
 
 #To check the palindrome
 print "Cheking palindrome in $infile file\n\n";
-PaliSubs::palindrome($infile, $identity, $plot, $outfile, $strand,$clean, $repeats);
+PaliSubs::palindrome($infile, $identity, $plot, $path, $strand,$clean, $repeats, $brutal);
 
-print "\nPlease check your $outfile folder/files for result :)\n\n";
+print "\nPlease check your $path folder for result :)\n\n";
 
 
 __END__

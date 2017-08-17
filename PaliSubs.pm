@@ -47,13 +47,22 @@ our @EXPORT_OK = qw(yesORno deldir);
 
 
 sub palindrome {
-my($seqfile, $identity, $plot, $outfile, $strand, $clean, $repeats) = @_;
+my($seqfile, $identity, $plot, $outfile, $strand, $clean, $repeats, $brutal) = @_;
 use File::Temp qw(tempfile);
 use File::Copy;
 use File::Remove 'remove';
+use File::Path qw(remove_tree rmtree);
 
-mkdir("$ENV{PWD}/$outfile") or die $!;
-if ($plot eq "yes") { mkdir("$ENV{PWD}/$outfile/dotplotRES") or die $!;}
+if (-d $outfile and $brutal eq "yes") { 
+	remove_tree("$outfile");
+	mkdir("$outfile"); 
+	} 
+elsif (-d $outfile) { 	
+	print "Folder already exist !! Use '--brutal or -b yes' flag to delete $!\n"; exit;
+	}
+else {mkdir "$outfile";}
+
+if ($plot eq "yes") { mkdir("$outfile/dotplotRES") or die $!;}
 #mkdir('tmpRES') or die $!;
 # It read one fasta sequence from multi fasta file and lastz it. Store the data in referece sequence fasta name/ID.
 my $filename = 'Palindrome.palfc';
@@ -89,11 +98,11 @@ print "Looking for palindrome in $id :";
 	#LASTZ SETTINGS and RUN
 	my $myLASTZ="lastz $tmp_fh $tmp_fh --chain --output=$outfile/$seqfile-$id.tmpal --format=general- --progress --ambiguous=iupac --identity=$identity --strand=$strand";
         system ("$myLASTZ");
-
+	if ($. == 1) {
 	my $error = system qw($myLASTZ);
 		if ($error) { die qq(\nAw... LastZ .. It failed\n Check your LastZ path);}
 		else { print qq(\nHooray! LastZ worked!\n\n);}
-	
+	}
 	open(FILE, "$outfile/$seqfile-$id.tmpal") or die "Can't read file $outfile/$seqfile-$id.tmpal [$!]\n";  
 	$document = <FILE>; 
 	close (FILE); 	
@@ -106,7 +115,7 @@ print "Looking for palindrome in $id :";
 		my $palGC=PaliSubs::process_contig($id, $seq);
 		push @allpalGC, $palGC;
 		#Plot DOTPLOT with R
-		if ($plot eq "yes") { dotplotR ($tmp_fh, $identity, $id, $outfile, $strand, $clean);}
+		if ($plot eq "yes") { dotplotR ($tmp_fh, $identity, $id, $outfile, $strand, $clean, $.);}
 		
 		if ($repeats eq 'yes') {
 		#TRF SETTINGS and RUN
@@ -144,15 +153,12 @@ print "\nConcatinating ----------\n";
 #system ("perl -please $outfile/*.tmpal > Palindrome.palfc");
 #system ("cd $outfile; find . -name '*.tmpal' -exec cat {} \+ > Palindrome.palfc ; cd .."); # note in some cases \; is needed -- tested on ubuntu
 
-if (-z "$outfile/Palindrome.palfc") { print "!!! NO PALINDROME identified !!!\n"; exit();} 
-#my $outfile = shift;
-#open OUT,">".$outfile or die "Could not open $outfile:$!\n";
-#print OUT $_ while <>;
-
 #system ("perl -e 'open OUT,">".shift;print OUT <>' output *.txt");
 
 my @allfc_files = glob ('*.palfc');
 moveFiles(\@allfc_files,"$outfile");
+
+if (!-s "$outfile/Palindrome.palfc") { print "!!! NO PALINDROME identified !!!\n You may can try with lower identity\n"; exit();}
 
 #print  "\nDeleting .tmpal files\n";
 #remove("$outfile/*.tmpal"); #delete all
@@ -185,20 +191,21 @@ print "\n$seplines";
 }
 
 sub dotplotR {
-my ($fileD, $idt, $id, $outfile, $strand, $clean) = @_;
+my ($fileD, $idt, $id, $outfile, $strand, $clean, $lnum) = @_;
 print "$fileD, $idt, $id, $outfile\n";
 
 my $myDOTPLOT="lastz $fileD $fileD --chain --output=$outfile/dotplotRES/$id.dotplot --format=rdotplot --progress --ambiguous=iupac --identity=$idt --strand=$strand";
 system ("$myDOTPLOT");
 
+if ($lnum == 1) {
 my $error = system qw($myDOTPLOT);
-if ($error) {
-    die qq(\nAw... LastZ .. It failed\n Check your LastZ path);
+	if ($error) {
+    		die qq(\nAw... LastZ .. It failed\n Check your LastZ path);
+	}
+	else {
+    		print qq(\nHooray! LastZ worked!\n\n);
+	}
 }
-else {
-    print qq(\nHooray! LastZ worked!\n\n);
-}
-
 system ("Rscript Rscripts/LASTZdotplot.R --title $id-dotplot -s 1000 -r 100 -o $outfile/dotplotRES/seeDotplot-$id $outfile/dotplotRES/$id.dotplot");
 
 #delete the file
@@ -556,6 +563,8 @@ Mandatory parameters:
   -c <minus or plus or both> 	clean files "yes" or "no"
 
   -r <repeats> 	find repeats "yes" or "no"
+
+  -b <brutal> 	overwrite previous run "yes"  default is "no"
 
 End_Print_Usage
 
