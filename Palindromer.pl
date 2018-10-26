@@ -5,6 +5,7 @@ use autodie;
 use File::Temp qw(tempfile);
 use File::Copy;
 use Cwd qw();
+use lib '.'; #find in root
 use Getopt::Long;
 use File::Remove 'remove';
 use File::Path qw(make_path remove_tree);
